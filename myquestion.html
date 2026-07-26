@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>أسئلتي</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="menu-btn" onclick="window.location.href='/question'">⬅️ عودة</div>
+    <div style="padding: 50px 20px;">
+        <h2 style="text-align: center; color: #6db672;">سجل أسئلتي</h2>
+        <div id="myQuestionsList"></div>
+    </div>
+
+    <script type="module">
+        import { db, ref, query, orderByChild, equalTo, onValue, checkBanStatus } from './firebase-config.js';
+        
+        checkBanStatus();
+        const username = localStorage.getItem('username');
+
+        const qQuery = query(ref(db, 'questions'), orderByChild('username'), equalTo(username));
+        onValue(qQuery, (snapshot) => {
+            const list = document.getElementById('myQuestionsList');
+            list.innerHTML = '';
+            
+            if(!snapshot.exists()) {
+                list.innerHTML = '<p style="text-align:center;">لا توجد أسئلة سابقة.</p>';
+                return;
+            }
+
+            snapshot.forEach((child) => {
+                const data = child.val();
+                let html = `<div class="card">
+                    <p><strong>سؤالي:</strong> ${data.text}</p>`;
+                if (data.imageUrl) html += `<img src="${data.imageUrl}" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">`;
+                
+                if (data.reply) {
+                    html += `<div class="admin-reply-box">
+                        <p style="color: #6db672;"><strong>رد المعلم:</strong> ${data.reply}</p>`;
+                    if (data.replyImage) html += `<img src="${data.replyImage}" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">`;
+                    html += `</div>`;
+                } else {
+                    html += `<p style="color: #888; font-size: 0.9rem; margin-top:10px;">(في انتظار الرد...)</p>`;
+                }
+                html += `</div>`;
+                list.innerHTML = html + list.innerHTML; // أحدث الأسئلة أولاً
+            });
+        });
+    </script>
+</body>
+</html>
