@@ -2,27 +2,32 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تسجيل الدخول</title>
-    <link rel="stylesheet" href="style.css">
+    <title>تسجيل الدخول - منصة الأحياء</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-    <div class="card" style="text-align: center; margin-top: 150px; max-width: 400px;">
-        <h2>تسجيل الدخول</h2>
-        <br>
-        <input type="text" id="usernameInput" placeholder="أدخل اسمك الكريم (ثلاثي أو رباعي)">
-        <button onclick="login()" style="width: 100%; margin-top: 10px;">دخول</button>
+<body style="justify-content: center; align-items: center;">
+    
+    <div class="glass-card" style="width: 100%; max-width: 400px; text-align: center;">
+        <h2 style="color: var(--primary); margin-bottom: 5px;">أهلاً بك</h2>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">من فضلك أدخل اسمك للمتابعة</p>
+        
+        <input type="text" id="usernameInput" placeholder="الاسم الثلاثي أو الرباعي..." autocomplete="off">
+        <button class="btn" onclick="login()" style="width: 100%; margin-top: 20px;">دخول للمنصة</button>
     </div>
 
-    <script>
-        function login() {
+    <script type="module">
+        import { enforceSecurity } from './firebase-config.js';
+        enforceSecurity();
+
+        window.login = () => {
             const name = document.getElementById('usernameInput').value.trim();
-            if(name) {
+            if(name.length > 5) {
                 localStorage.setItem('username', name);
-                window.location.href = '/question';
+                window.location.replace('/question');
             } else {
-                alert('يرجى كتابة الاسم!');
+                alert('يرجى كتابة الاسم بشكل صحيح (أكثر من 5 أحرف)');
             }
-        }
+        };
     </script>
 </body>
 </html>
