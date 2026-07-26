@@ -1,58 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
+
+:root {
+    --bg-main: #0B1115;
+    --bg-card: #151F26;
+    --primary: #10B981;
+    --primary-hover: #059669;
+    --text-main: #F3F4F6;
+    --text-muted: #9CA3AF;
+    --border: #2A3B47;
+    --danger: #EF4444;
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
-body { background-color: #0d1a15; color: #fff; direction: rtl; overflow-x: hidden; }
+body { background-color: var(--bg-main); color: var(--text-main); direction: rtl; min-height: 100vh; display: flex; flex-direction: column; }
 
-/* تصميم صفحة الأسئلة المطابق للصورة */
-.question-container {
-    max-width: 800px; margin: 50px auto; text-align: center;
-    background: url('image_f71ebc.png') no-repeat center center/cover;
-    padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    position: relative; z-index: 1;
+/* تأثير الخلفية العام */
+body::before {
+    content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at center, rgba(16, 185, 129, 0.03) 0%, transparent 60%);
+    z-index: -1; pointer-events: none;
 }
-.header-logo img { width: 100px; border-radius: 50%; box-shadow: 0 0 20px rgba(100,200,100,0.5); margin-bottom: 15px; }
-.header-title h1 { color: #fff; font-size: 2.5rem; }
-.header-title h1 span { color: #6db672; }
-.header-subtitle { color: #6db672; font-size: 1.2rem; margin-bottom: 30px; }
 
-.input-box {
-    background: #1a2620; border: 1px solid #2e4a3d; border-radius: 15px;
-    padding: 20px; display: flex; flex-direction: column; gap: 15px;
+/* الحاويات العامة (Cards) */
+.glass-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
-textarea {
-    background: transparent; border: none; color: #fff; width: 100%;
-    height: 80px; resize: none; font-size: 1.1rem; outline: none;
-}
-.upload-btn {
-    background: #111b16; border: 1px dashed #2e4a3d; padding: 15px;
-    width: 60px; text-align: center; border-radius: 10px; cursor: pointer; color: #6db672;
-}
-.submit-btn {
-    background: #6db672; color: #111; border: none; padding: 12px 30px;
-    border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; align-self: flex-start;
-}
-.submit-btn:hover { background: #5a9e5e; }
 
-/* القائمة الجانبية (Sidebar) */
-.sidebar {
-    position: fixed; right: -250px; top: 0; width: 250px; height: 100%;
-    background: #111b16; transition: 0.3s; padding: 20px; z-index: 100;
-    border-left: 1px solid #2e4a3d;
+/* الأزرار والمدخلات */
+.btn {
+    background: var(--primary); color: #fff; border: none; padding: 12px 24px;
+    border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem;
 }
-.sidebar.active { right: 0; }
-.sidebar a { display: block; color: #fff; text-decoration: none; padding: 15px; border-bottom: 1px solid #2e4a3d; }
-.menu-btn { position: fixed; right: 20px; top: 20px; font-size: 30px; cursor: pointer; z-index: 101; color: #6db672; }
+.btn:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+.btn-danger { background: var(--danger); }
+.btn-danger:hover { background: #DC2626; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
 
-/* شاشة الحظر */
-.banned-screen {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 100vh; background: #000; text-align: center; gap: 20px;
+input[type="text"], textarea {
+    width: 100%; padding: 15px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 1rem;
+    transition: 0.3s; outline: none;
 }
-.banned-screen h1 { color: #ff4d4d; }
+input[type="text"]:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+textarea { resize: vertical; min-height: 120px; }
 
-/* تصميم صفحات عامة */
-.card { background: #1a2620; padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 800px; border: 1px solid #2e4a3d; }
-.admin-reply-box { margin-top: 15px; border-top: 1px dashed #2e4a3d; padding-top: 15px; }
-button { background: #6db672; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; color: #111; font-weight: bold; }
-.btn-danger { background: #ff4d4d; color: white; }
-input[type="text"] { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #2e4a3d; background: #111b16; color: white; margin-bottom: 10px; }
+/* منطقة رفع الصورة الاحترافية */
+.upload-area {
+    border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
+    text-align: center; cursor: pointer; transition: 0.3s; position: relative;
+    background: rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+.upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: rgba(16,185,129,0.05); }
+.upload-area i { font-size: 2rem; color: var(--primary); }
+.upload-area span { color: var(--text-muted); font-size: 0.9rem; }
+.image-preview { max-width: 100%; max-height: 150px; border-radius: 8px; display: none; object-fit: contain; }
+
+/* القائمة الجانبية (Navbar & Sidebar) */
+.navbar {
+    padding: 20px 5%; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border); background: var(--bg-card);
+}
+.logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.nav-links { display: flex; gap: 20px; }
+.nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 600; transition: 0.3s; }
+.nav-links a:hover, .nav-links a.active { color: var(--primary); }
+
+/* شاشة الحظر الصارمة */
+.banned-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999;
+    display: flex; justify-content: center; align-items: center; padding: 20px;
+}
+.banned-card {
+    background: var(--bg-card); border: 2px solid var(--danger); border-radius: 20px;
+    padding: 40px; text-align: center; max-width: 450px; width: 100%;
+}
+.banned-card h1 { color: var(--danger); margin: 15px 0; font-size: 2rem; }
+.banned-card .ban-icon { font-size: 4rem; line-height: 1; }
+.fb-btn {
+    display: inline-block; margin-top: 20px; background: #1877F2; color: white;
+    padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s;
+}
+.fb-btn:hover { background: #166FE5; }
+
+/* صفحة الخطأ 404 */
+.error-page { text-align: center; margin: auto; padding: 40px; }
+.error-page h1 { font-size: 6rem; color: var(--primary); margin-bottom: 10px; line-height: 1; }
+.error-page p { color: var(--text-muted); font-size: 1.2rem; margin-bottom: 30px; }
+
+/* الأسئلة والردود */
+.question-item { margin-bottom: 20px; }
+.admin-reply {
+    background: rgba(16,185,129,0.05); border-right: 4px solid var(--primary);
+    padding: 15px; border-radius: 0 8px 8px 0; margin-top: 15px;
+}
+.post-meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between; }
+img.attached-img { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid var(--border); }
