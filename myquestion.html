@@ -2,49 +2,85 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>أسئلتي</title>
-    <link rel="stylesheet" href="style.css">
+    <title>أسئلتي - منصة الأحياء</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="menu-btn" onclick="window.location.href='/question'">⬅️ عودة</div>
-    <div style="padding: 50px 20px;">
-        <h2 style="text-align: center; color: #6db672;">سجل أسئلتي</h2>
-        <div id="myQuestionsList"></div>
+    <nav class="navbar">
+        <a href="/question" class="logo"><i class="fa-solid fa-microscope"></i> فيكتور بيولوجي</a>
+        <div class="nav-links">
+            <a href="/question">اطرح سؤالاً</a>
+            <a href="/myquestion" class="active">أسئلتي ومراجعاتي</a>
+        </div>
+    </nav>
+
+    <div style="padding: 40px 20px; max-width: 800px; margin: 0 auto; width: 100%;">
+        <h2 style="margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">سجل أسئلتي</h2>
+        <div id="myQuestionsList">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+                <p style="margin-top: 10px;">جاري جلب بياناتك...</p>
+            </div>
+        </div>
     </div>
 
     <script type="module">
-        import { db, ref, query, orderByChild, equalTo, onValue, checkBanStatus } from './firebase-config.js';
+        import { db, ref, query, orderByChild, equalTo, onValue, enforceSecurity } from './firebase-config.js';
         
-        checkBanStatus();
+        enforceSecurity();
         const username = localStorage.getItem('username');
 
         const qQuery = query(ref(db, 'questions'), orderByChild('username'), equalTo(username));
         onValue(qQuery, (snapshot) => {
             const list = document.getElementById('myQuestionsList');
-            list.innerHTML = '';
             
             if(!snapshot.exists()) {
-                list.innerHTML = '<p style="text-align:center;">لا توجد أسئلة سابقة.</p>';
+                list.innerHTML = `
+                    <div class="glass-card" style="text-align:center;">
+                        <i class="fa-regular fa-folder-open" style="font-size: 3rem; color: var(--border); margin-bottom:15px;"></i>
+                        <h3>لا توجد أسئلة سابقة.</h3>
+                        <p style="color:var(--text-muted); margin-top:10px;">لم تقم بطرح أي سؤال حتى الآن.</p>
+                        <a href="/question" class="btn" style="margin-top:20px; text-decoration:none;">اطرح سؤالك الأول</a>
+                    </div>`;
                 return;
             }
 
-            snapshot.forEach((child) => {
-                const data = child.val();
-                let html = `<div class="card">
-                    <p><strong>سؤالي:</strong> ${data.text}</p>`;
-                if (data.imageUrl) html += `<img src="${data.imageUrl}" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">`;
+            let htmlContent = '';
+            const questions = [];
+            snapshot.forEach(child => { questions.push(child.val()); });
+            
+            // ترتيب من الأحدث للأقدم
+            questions.sort((a,b) => b.timestamp - a.timestamp).forEach(data => {
+                const date = new Date(data.timestamp).toLocaleString('ar-EG');
+                let html = `
+                <div class="glass-card question-item">
+                    <div class="post-meta">
+                        <span><i class="fa-regular fa-clock"></i> ${date}</span>
+                    </div>
+                    <p style="font-size: 1.1rem; line-height: 1.6;">${data.text}</p>
+                `;
+                if (data.imageUrl) html += `<img src="${data.imageUrl}" class="attached-img">`;
                 
-                if (data.reply) {
-                    html += `<div class="admin-reply-box">
-                        <p style="color: #6db672;"><strong>رد المعلم:</strong> ${data.reply}</p>`;
-                    if (data.replyImage) html += `<img src="${data.replyImage}" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">`;
+                if (data.reply || data.replyImage) {
+                    html += `
+                    <div class="admin-reply">
+                        <strong style="color: var(--primary); display: block; margin-bottom: 5px;">
+                            <i class="fa-solid fa-check-circle"></i> رد المعلم:
+                        </strong>
+                        <p>${data.reply}</p>`;
+                    if (data.replyImage) html += `<img src="${data.replyImage}" class="attached-img">`;
                     html += `</div>`;
                 } else {
-                    html += `<p style="color: #888; font-size: 0.9rem; margin-top:10px;">(في انتظار الرد...)</p>`;
+                    html += `
+                    <div style="margin-top: 15px; display: inline-block; padding: 5px 12px; background: rgba(255,255,255,0.05); border-radius: 20px; font-size: 0.85rem; color: var(--text-muted);">
+                        <i class="fa-regular fa-hourglass-half"></i> قيد الانتظار...
+                    </div>`;
                 }
                 html += `</div>`;
-                list.innerHTML = html + list.innerHTML; // أحدث الأسئلة أولاً
+                htmlContent += html;
             });
+            list.innerHTML = htmlContent;
         });
     </script>
 </body>
