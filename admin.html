@@ -2,17 +2,27 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة الإدارة</title>
-    <link rel="stylesheet" href="style.css">
+    <title>الإدارة - فيكتور بيولوجي</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div style="padding: 20px;">
-        <h1 style="text-align: center; color: #6db672;">لوحة الإدارة - الأسئلة الواردة</h1>
+    <nav class="navbar">
+        <div class="logo"><i class="fa-solid fa-shield-halved"></i> لوحة تحكم الإدارة</div>
+    </nav>
+
+    <div style="padding: 40px 20px; max-width: 1000px; margin: 0 auto; width: 100%;">
         <div id="adminList"></div>
     </div>
 
     <script type="module">
         import { db, storage, ref, onValue, update, set, storageRef, uploadBytes, getDownloadURL } from './firebase-config.js';
+
+        // قائمة المحظورين لتحديث حالة الأزرار
+        let bannedUsers = {};
+        onValue(ref(db, 'banned'), (snap) => {
+            bannedUsers = snap.val() || {};
+        });
 
         onValue(ref(db, 'questions'), (snapshot) => {
             const list = document.getElementById('adminList');
@@ -23,30 +33,42 @@
                 questions.push({ id: child.key, ...child.val() });
             });
             
-            // ترتيب بالوقت الأحدث
             questions.sort((a, b) => b.timestamp - a.timestamp).forEach(data => {
                 const qDiv = document.createElement('div');
-                qDiv.className = 'card';
+                qDiv.className = 'glass-card question-item';
+                const date = new Date(data.timestamp).toLocaleString('ar-EG');
+                const isBanned = bannedUsers[data.username] === true;
                 
                 let html = `
-                    <div style="display:flex; justify-content: space-between;">
-                        <h3>الطالب: ${data.username}</h3>
+                    <div style="display:flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px;">
                         <div>
-                            <button class="btn-danger" onclick="toggleBan('${data.username}', true)">حظر</button>
-                            <button onclick="toggleBan('${data.username}', false)">إلغاء الحظر</button>
+                            <h3 style="color: var(--primary);"><i class="fa-solid fa-user-graduate"></i> ${data.username}</h3>
+                            <span class="post-meta" style="margin: 0;">${date}</span>
+                        </div>
+                        <div>
+                            ${isBanned 
+                                ? `<button class="btn" onclick="toggleBan('${data.username}', false)"><i class="fa-solid fa-unlock"></i> فك الحظر</button>`
+                                : `<button class="btn btn-danger" onclick="toggleBan('${data.username}', true)"><i class="fa-solid fa-ban"></i> حظر نهائي</button>`
+                            }
                         </div>
                     </div>
-                    <p style="margin-top:10px;"><strong>السؤال:</strong> ${data.text}</p>`;
+                    <p style="font-size: 1.1rem;">${data.text}</p>`;
                     
-                if(data.imageUrl) html += `<img src="${data.imageUrl}" style="max-width: 200px; display:block; margin: 10px 0;">`;
+                if(data.imageUrl) html += `<img src="${data.imageUrl}" class="attached-img" style="max-height:300px; object-fit:contain;">`;
                 
-                html += `<div class="admin-reply-box">
-                    <input type="text" id="replyText_${data.id}" placeholder="اكتب ردك هنا..." value="${data.reply || ''}">
-                    <input type="file" id="replyImg_${data.id}" accept="image/*">
-                    <button onclick="sendReply('${data.id}')" style="margin-top: 10px;">إرسال الرد</button>
+                html += `<div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px;">إضافة رد:</h4>
+                    <textarea id="replyText_${data.id}" placeholder="اكتب ردك العلمي هنا...">${data.reply || ''}</textarea>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <input type="file" id="replyImg_${data.id}" accept="image/*" style="width: auto; background: none; border: none;">
+                        <button class="btn" onclick="sendReply('${data.id}')"><i class="fa-solid fa-reply"></i> اعتماد الرد</button>
+                    </div>
                 </div>`;
                 
-                if (data.replyImage) html += `<p>تم إرفاق صورة بالرد مسبقاً.</p>`;
+                if (data.replyImage) {
+                    html += `<p style="color: var(--primary); font-size: 0.9rem; margin-top: 10px;"><i class="fa-solid fa-image"></i> يوجد صورة مرفقة بالرد الحالي.</p>`;
+                }
                 
                 qDiv.innerHTML = html;
                 list.appendChild(qDiv);
@@ -54,15 +76,19 @@
         });
 
         window.toggleBan = (username, status) => {
-            set(ref(db, 'banned/' + username), status ? true : null)
-                .then(() => alert(status ? `تم حظر ${username}` : `تم إلغاء حظر ${username}`));
+            if(confirm(`هل أنت متأكد من رغبتك في ${status ? 'حظر' : 'فك حظر'} الطالب: ${username}؟`)) {
+                set(ref(db, 'banned/' + username), status ? true : null)
+                    .then(() => alert(`تم الإجراء بنجاح.`));
+            }
         };
 
         window.sendReply = async (id) => {
-            const text = document.getElementById(`replyText_${id}`).value;
+            const text = document.getElementById(`replyText_${id}`).value.trim();
             const file = document.getElementById(`replyImg_${id}`).files[0];
-            let replyImageUrl = null;
+            
+            if (!text && !file) return alert('يجب كتابة رد أو إرفاق صورة.');
 
+            let replyImageUrl = null;
             if(file) {
                 const imgRef = storageRef(storage, `replies/${Date.now()}_${file.name}`);
                 await uploadBytes(imgRef, file);
@@ -73,7 +99,7 @@
             if(replyImageUrl) updateData.replyImage = replyImageUrl;
 
             update(ref(db, `questions/${id}`), updateData)
-                .then(() => alert('تم إرسال الرد بنجاح!'));
+                .then(() => alert('تم حفظ وإرسال الرد بنجاح!'));
         };
     </script>
 </body>
