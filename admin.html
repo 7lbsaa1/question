@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة الإدارة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div style="padding: 20px;">
+        <h1 style="text-align: center; color: #6db672;">لوحة الإدارة - الأسئلة الواردة</h1>
+        <div id="adminList"></div>
+    </div>
+
+    <script type="module">
+        import { db, storage, ref, onValue, update, set, storageRef, uploadBytes, getDownloadURL } from './firebase-config.js';
+
+        onValue(ref(db, 'questions'), (snapshot) => {
+            const list = document.getElementById('adminList');
+            list.innerHTML = '';
+            const questions = [];
+            
+            snapshot.forEach(child => {
+                questions.push({ id: child.key, ...child.val() });
+            });
+            
+            // ترتيب بالوقت الأحدث
+            questions.sort((a, b) => b.timestamp - a.timestamp).forEach(data => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'card';
+                
+                let html = `
+                    <div style="display:flex; justify-content: space-between;">
+                        <h3>الطالب: ${data.username}</h3>
+                        <div>
+                            <button class="btn-danger" onclick="toggleBan('${data.username}', true)">حظر</button>
+                            <button onclick="toggleBan('${data.username}', false)">إلغاء الحظر</button>
+                        </div>
+                    </div>
+                    <p style="margin-top:10px;"><strong>السؤال:</strong> ${data.text}</p>`;
+                    
+                if(data.imageUrl) html += `<img src="${data.imageUrl}" style="max-width: 200px; display:block; margin: 10px 0;">`;
+                
+                html += `<div class="admin-reply-box">
+                    <input type="text" id="replyText_${data.id}" placeholder="اكتب ردك هنا..." value="${data.reply || ''}">
+                    <input type="file" id="replyImg_${data.id}" accept="image/*">
+                    <button onclick="sendReply('${data.id}')" style="margin-top: 10px;">إرسال الرد</button>
+                </div>`;
+                
+                if (data.replyImage) html += `<p>تم إرفاق صورة بالرد مسبقاً.</p>`;
+                
+                qDiv.innerHTML = html;
+                list.appendChild(qDiv);
+            });
+        });
+
+        window.toggleBan = (username, status) => {
+            set(ref(db, 'banned/' + username), status ? true : null)
+                .then(() => alert(status ? `تم حظر ${username}` : `تم إلغاء حظر ${username}`));
+        };
+
+        window.sendReply = async (id) => {
+            const text = document.getElementById(`replyText_${id}`).value;
+            const file = document.getElementById(`replyImg_${id}`).files[0];
+            let replyImageUrl = null;
+
+            if(file) {
+                const imgRef = storageRef(storage, `replies/${Date.now()}_${file.name}`);
+                await uploadBytes(imgRef, file);
+                replyImageUrl = await getDownloadURL(imgRef);
+            }
+
+            const updateData = { reply: text };
+            if(replyImageUrl) updateData.replyImage = replyImageUrl;
+
+            update(ref(db, `questions/${id}`), updateData)
+                .then(() => alert('تم إرسال الرد بنجاح!'));
+        };
+    </script>
+</body>
+</html>
