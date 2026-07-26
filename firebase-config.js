@@ -17,27 +17,43 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
-// دالة فحص الحظر (تعمل في كل صفحة)
-export function checkBanStatus() {
+export function enforceSecurity() {
     const username = localStorage.getItem('username');
-    if (!username && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+    const currentPath = window.location.pathname;
+
+    // 1. منع دخول غير المسجلين لغير صفحة تسجيل الدخول
+    if (!username && !currentPath.includes('/login') && !currentPath.includes('/error')) {
+        window.location.replace('/login');
         return;
     }
-    
+
+    // 2. منع المسجل من العودة لصفحة تسجيل الدخول (لتغيير اسمه)
+    if (username && currentPath.includes('/login')) {
+        window.location.replace('/question');
+        return;
+    }
+
+    // 3. فحص الحظر الصارم (يطرد المستخدم فوراً)
     if (username) {
         const banRef = ref(db, 'banned/' + username);
         onValue(banRef, (snapshot) => {
             if (snapshot.exists() && snapshot.val() === true) {
+                // تدمير واجهة الموقع بالكامل واستبدالها بشاشة الحظر
                 document.body.innerHTML = `
-                    <div class="banned-screen">
-                        <h1>تم حظرك يا ${username} لتعدي سياسات الموقع</h1>
-                        <p>لفتح الموقع والاستفسار اذهب الي صفحة الفيس بوك</p>
-                        <a href="https://www.facebook.com/profile.php?id=61584178882412&locale=ar_AR" target="_blank">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook" width="80">
-                        </a>
+                    <div class="banned-overlay">
+                        <div class="banned-card">
+                            <div class="ban-icon">⚠️</div>
+                            <h1>تم حظرك يا ${username}</h1>
+                            <p>لقد قمت بانتهاك سياسات المنصة.</p>
+                            <p>للاستفسار أو طلب رفع الحظر، تواصل معنا عبر فيسبوك.</p>
+                            <a href="https://www.facebook.com/profile.php?id=61584178882412&locale=ar_AR" target="_blank" class="fb-btn">
+                                تواصل مع الإدارة
+                            </a>
+                        </div>
                     </div>
                 `;
+                // إيقاف أي سكربتات أخرى
+                window.stop(); 
             }
         });
     }
